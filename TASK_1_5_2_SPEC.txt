@@ -1,0 +1,72 @@
+Crypto Grid v1.5.2 Specification (for Codex)
+
+Goal
+
+Create Crypto_grid_csv_explorer_v1_5_2_modular starting from the WORKING
+v1.5.1 codebase.
+
+Critical principle
+
+Avoid unrealistic / illusory profits. Accounting correctness and
+compilation safety are more important than optimization.
+
+Rules
+
+1. Preserve existing v1.5.1 behavior unless explicitly modified below.
+
+2. Existing v1.5.1 logic
+
+-   One geometric sub-line between two main grid lines.
+-   Half-cycle entries on sub-lines.
+
+3. New v1.5.2 behavior (two-way funicular)
+
+Allow opposite-direction sub-line trades inside the same interval.
+
+Example:
+
+1000 -> 975 (subline) -> 952 (main line) -> 975 (subline) -> 1000
+
+v1.5.1: - buy 1/2 at 975 - buy remaining 1/2 at 952 - close at 1000
+
+v1.5.2 additionally: - after touching the opposite main line,
+opposite-direction sub-line entry becomes allowed - at 975 on the way
+back, allow opposite-direction half-cycle sell - at 1000 finish/fill
+corresponding sell cycle
+
+4. Anti-illusion safety rules (CRITICAL)
+
+-   SELL sub-line trades may use only FREE crypto, never reserved
+    crypto.
+-   BUY sub-line trades may use only FREE stable, never reserved stable.
+-   No borrowing from reserves.
+-   Preserve realistic accounting.
+
+5. Simplicity constraint
+
+-   Do NOT implement recursive or unlimited multi-directional funicular
+    logic.
+-   Allow at most one opposite-direction cycle per interval and
+    direction.
+-   Same-side duplication should remain blocked.
+
+6. Diagnostics
+
+Add detailed diagnostics for: - main-line crossings - sub-line touches -
+sub-line entries by direction - returned-to-parent-main count -
+reached-next-main count - unresolved entries - trades split by origin
+(main vs sub-line) - realized P/L by origin - two-way funicular entry
+count
+
+7. Preserve reserve accounting and realized/open P/L semantics.
+
+8. Backward compatibility
+
+With sub-lines disabled, results should match v1.5.
+
+Implementation guidance
+
+-   Start from the working v1.5.1 codebase.
+-   Prefer minimal safe changes.
+-   Do not refactor architecture unless necessary.
+-   First priority: compile successfully.
