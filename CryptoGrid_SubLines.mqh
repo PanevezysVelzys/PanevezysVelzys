@@ -1,7 +1,7 @@
 //+------------------------------------------------------------------+
 //| CryptoGrid_SubLines.mqh                                         |
 //| Sub-line helpers                                                |
-//| Modular v1.5.1 branch: one geometric sub-line per grid interval.|
+//| Modular v1.5.2 branch: one geometric sub-line plus conservative two-way funicular entries.|
 //+------------------------------------------------------------------+
 #ifndef __CRYPTOGRID_SUBLINES_MQH__
 #define __CRYPTOGRID_SUBLINES_MQH__
@@ -68,6 +68,117 @@ bool FindPendingSellLot(const int open_level,
    return false;
 }
 //+------------------------------------------------------------------+
+
+//+------------------------------------------------------------------+
+bool HasPendingSellLotInInterval(const int lower_level,
+                                  const int upper_level)
+{
+   for(int i = 0; i < ArraySize(g_pending_sells); i++)
+   {
+      if(IsSameInterval(g_pending_sells[i].open_level,
+                        g_pending_sells[i].close_level,
+                        lower_level,
+                        upper_level))
+         return true;
+   }
+
+   return false;
+}
+//+------------------------------------------------------------------+
+bool HasPendingBuyLotInInterval(const int lower_level,
+                                 const int upper_level)
+{
+   for(int i = 0; i < ArraySize(g_pending_buys); i++)
+   {
+      if(IsSameInterval(g_pending_buys[i].open_level,
+                        g_pending_buys[i].close_level,
+                        lower_level,
+                        upper_level))
+         return true;
+   }
+
+   return false;
+}
+//+------------------------------------------------------------------+
+bool HasReachedBuySublineInInterval(const int lower_level,
+                                     const int upper_level)
+{
+   int index = -1;
+
+   if(!FindPendingBuyLot(lower_level, upper_level, true, index))
+      return false;
+
+   if(index < 0 || index >= ArraySize(g_pending_buys))
+      return false;
+
+   return g_pending_buys[index].subline_reached_next;
+}
+//+------------------------------------------------------------------+
+bool HasReachedSellSublineInInterval(const int lower_level,
+                                      const int upper_level)
+{
+   int index = -1;
+
+   if(!FindPendingSellLot(upper_level, lower_level, true, index))
+      return false;
+
+   if(index < 0 || index >= ArraySize(g_pending_sells))
+      return false;
+
+   return g_pending_sells[index].subline_reached_next;
+}
+//+------------------------------------------------------------------+
+bool CanOpenUpperSellSubCycle(const int lower_level,
+                               const int upper_level,
+                               bool &two_way_entry)
+{
+   two_way_entry = false;
+
+   // Same-side duplication remains blocked: there can be only one pending
+   // upper/sell sub-line cycle for an interval at a time.
+   if(HasPendingSellLotInInterval(lower_level, upper_level))
+      return false;
+
+   // v1.5.1 path: empty interval may open the first sub-line leg.
+   if(!HasPendingBuyLotInInterval(lower_level, upper_level))
+      return true;
+
+   // v1.5.2 path: after a lower/buy sub-line leg has reached the lower
+   // main line, permit one opposite upper/sell leg using only FREE crypto.
+   if(HasReachedBuySublineInInterval(lower_level, upper_level))
+   {
+      two_way_entry = true;
+      return true;
+   }
+
+   return false;
+}
+//+------------------------------------------------------------------+
+bool CanOpenLowerBuySubCycle(const int lower_level,
+                              const int upper_level,
+                              bool &two_way_entry)
+{
+   two_way_entry = false;
+
+   // Same-side duplication remains blocked: there can be only one pending
+   // lower/buy sub-line cycle for an interval at a time.
+   if(HasPendingBuyLotInInterval(lower_level, upper_level))
+      return false;
+
+   // v1.5.1 path: empty interval may open the first sub-line leg.
+   if(!HasPendingSellLotInInterval(lower_level, upper_level))
+      return true;
+
+   // v1.5.2 path: after an upper/sell sub-line leg has reached the upper
+   // main line, permit one opposite lower/buy leg using only FREE stable.
+   if(HasReachedSellSublineInInterval(lower_level, upper_level))
+   {
+      two_way_entry = true;
+      return true;
+   }
+
+   return false;
+}
 bool HasPendingLotInInterval(const int lower_level,
                              const int upper_level)
 {

@@ -1,7 +1,7 @@
 //+------------------------------------------------------------------+
 //| CryptoGrid_CycleOpening.mqh                                     |
 //| Opening upper/lower cycles                                      |
-//| v1.5.1: v1.5 openings plus optional half-size sub-line entries. |
+//| v1.5.2: v1.5 openings plus conservative two-way half-size sub-line entries. |
 //+------------------------------------------------------------------+
 #ifndef __CRYPTOGRID_CYCLEOPENING_MQH__
 #define __CRYPTOGRID_CYCLEOPENING_MQH__
@@ -16,7 +16,9 @@ void OpenUpperSellSubCycle(int upper_level, double subline_price)
 
    int close_level = upper_level - 1;
 
-   if(HasPendingLotInInterval(close_level, upper_level))
+   bool two_way_entry = false;
+
+   if(!CanOpenUpperSellSubCycle(close_level, upper_level, two_way_entry))
    {
       g_subline_upper_skipped++;
       g_subline_upper_skip_interval++;
@@ -90,17 +92,27 @@ void OpenUpperSellSubCycle(int upper_level, double subline_price)
    g_upper_cycle_sells++;
    g_subline_upper_sells++;
 
+   if(two_way_entry)
+      g_subline_upper_twoway_sells++;
+
    UpdateRiskStats();
 
    if(InpInfoDetail == INFO_GRID_EVENTS)
    {
-      Print("UPPER SUB-LINE CYCLE OPENED #", (string)cycle_id);
+      if(two_way_entry)
+         Print("UPPER TWO-WAY SUB-LINE CYCLE OPENED #", (string)cycle_id);
+      else
+         Print("UPPER SUB-LINE CYCLE OPENED #", (string)cycle_id);
       Print("Time                 : ", FmtDt(g_last_tick_time));
       Print("Interval levels      : ", (string)close_level, " -> ", (string)upper_level);
       Print("Sub-line real        : ", FmtPrice(subline_price));
       Print("Bid                  : ", FmtPrice(g_last_bid));
-      Print("Action               : SELL ", FmtPct(SUBLINE_PART_RATE * 100.0),
-            "% of planned cycle");
+      if(two_way_entry)
+         Print("Action               : TWO-WAY SELL ", FmtPct(SUBLINE_PART_RATE * 100.0),
+               "% of planned cycle using FREE crypto only");
+      else
+         Print("Action               : SELL ", FmtPct(SUBLINE_PART_RATE * 100.0),
+               "% of planned cycle");
       Print("Base weight sizing   : base weight ", FmtPct(BaseWeightPercent()),
             "% | base input ", FmtPct(InpTradePercent), "%");
       Print("Crypto sold/free     : ", FmtMoney(base_sold));
@@ -123,7 +135,9 @@ void OpenLowerBuySubCycle(int lower_level, double subline_price)
 
    int close_level = lower_level + 1;
 
-   if(HasPendingLotInInterval(lower_level, close_level))
+   bool two_way_entry = false;
+
+   if(!CanOpenLowerBuySubCycle(lower_level, close_level, two_way_entry))
    {
       g_subline_lower_skipped++;
       g_subline_lower_skip_interval++;
@@ -195,17 +209,27 @@ void OpenLowerBuySubCycle(int lower_level, double subline_price)
    g_lower_cycle_buys++;
    g_subline_lower_buys++;
 
+   if(two_way_entry)
+      g_subline_lower_twoway_buys++;
+
    UpdateRiskStats();
 
    if(InpInfoDetail == INFO_GRID_EVENTS)
    {
-      Print("LOWER SUB-LINE CYCLE OPENED #", (string)cycle_id);
+      if(two_way_entry)
+         Print("LOWER TWO-WAY SUB-LINE CYCLE OPENED #", (string)cycle_id);
+      else
+         Print("LOWER SUB-LINE CYCLE OPENED #", (string)cycle_id);
       Print("Time                 : ", FmtDt(g_last_tick_time));
       Print("Interval levels      : ", (string)lower_level, " -> ", (string)close_level);
       Print("Sub-line real        : ", FmtPrice(subline_price));
       Print("Ask                  : ", FmtPrice(g_last_ask));
-      Print("Action               : BUY crypto with ", FmtPct(SUBLINE_PART_RATE * 100.0),
-            "% of planned cycle");
+      if(two_way_entry)
+         Print("Action               : TWO-WAY BUY crypto with ", FmtPct(SUBLINE_PART_RATE * 100.0),
+               "% of planned cycle using FREE stable only");
+      else
+         Print("Action               : BUY crypto with ", FmtPct(SUBLINE_PART_RATE * 100.0),
+               "% of planned cycle");
       Print("Quote weight sizing  : stable weight ", FmtPct(QuoteWeightPercent()),
             "% | base input ", FmtPct(InpTradePercent), "%");
       Print("Crypto bought/resvd  : ", FmtMoney(base_bought));

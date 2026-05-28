@@ -1,7 +1,7 @@
 //+------------------------------------------------------------------+
 //| CryptoGrid_Globals.mqh                                          |
 //| Global state                                                    |
-//| v1.5.1: v1.5 globals plus sub-line activity counters. |
+//| v1.5.2: v1.5 globals plus two-way sub-line activity counters. |
 //+------------------------------------------------------------------+
 #ifndef __CRYPTOGRID_GLOBALS_MQH__
 #define __CRYPTOGRID_GLOBALS_MQH__
@@ -50,6 +50,8 @@ ulong    g_subline_total_touches        = 0;
 
 ulong    g_subline_upper_sells          = 0;
 ulong    g_subline_lower_buys           = 0;
+ulong    g_subline_upper_twoway_sells   = 0;
+ulong    g_subline_lower_twoway_buys    = 0;
 ulong    g_subline_upper_skipped        = 0;
 ulong    g_subline_lower_skipped        = 0;
 ulong    g_subline_upper_skip_interval  = 0;

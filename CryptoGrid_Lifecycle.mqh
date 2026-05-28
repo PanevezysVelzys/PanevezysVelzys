@@ -1,7 +1,7 @@
 //+------------------------------------------------------------------+
 //| CryptoGrid_Lifecycle.mqh                                        |
 //| OnInit / OnDeinit / OnTick                                      |
-//| v1.5.1 lifecycle: v1.5 plus optional sub-line mode. |
+//| v1.5.2 lifecycle: v1.5 plus optional two-way sub-line mode. |
 //+------------------------------------------------------------------+
 #ifndef __CRYPTOGRID_LIFECYCLE_MQH__
 #define __CRYPTOGRID_LIFECYCLE_MQH__
@@ -96,6 +96,8 @@ int OnInit()
    g_subline_total_touches        = 0;
    g_subline_upper_sells          = 0;
    g_subline_lower_buys           = 0;
+   g_subline_upper_twoway_sells   = 0;
+   g_subline_lower_twoway_buys    = 0;
    g_subline_upper_skipped        = 0;
    g_subline_lower_skipped        = 0;
    g_subline_upper_skip_interval  = 0;
@@ -194,8 +196,8 @@ int OnInit()
    g_worst_open_total_pnl         = 0.0;
    g_worst_open_total_pnl_time    = 0;
 
-   Print("Crypto_grid_csv_explorer_v1_5_1_modular initialized.");
-   Print("Version             : CSV v1.5.1 modular, v1.5 cascade + geometric sub-lines");
+   Print("Crypto_grid_csv_explorer_v1_5_2_modular initialized.");
+   Print("Version             : CSV v1.5.2 modular, v1.5 cascade + conservative two-way geometric sub-lines");
    Print("File prefix         : ", InpFilePrefix);
    Print("Test period         : ", FmtDt(InpStartTime), " -> ", FmtDt(InpEndTime));
    Print("Initial amount      : ", FmtMoney(InpInitialAmount));
@@ -205,7 +207,7 @@ int OnInit()
    Print("Fee %               : ", FmtPct(InpFeePercent));
    Print("Grid center         : first CSV price");
    Print("Trade sizing mode   : source asset portfolio-weight sizing");
-   Print("Sub-lines           : ", (InpUseSubLines ? "enabled, one geometric sub-line per interval" : "disabled"));
+   Print("Sub-lines           : ", (InpUseSubLines ? "enabled, one geometric sub-line per interval with conservative two-way entries" : "disabled"));
    Print("Sub-line part       : ", FmtPct(SUBLINE_PART_RATE * 100.0), "% of planned cycle");
    Print("Info detail         : ", InfoText());
    Print("Skip days           : ", SkipDaysText());
@@ -250,7 +252,7 @@ void OnDeinit(const int reason)
    double audit_quote_reserved_diff = g_quote_reserved - audit_pending_sell_quote;
 
    Print("========================================");
-   Print("Crypto_grid_csv_explorer_v1_5_1_modular finished");
+   Print("Crypto_grid_csv_explorer_v1_5_2_modular finished");
 
    Print("----------------------------------------");
    Print("GRID ACTIVITY");
@@ -287,6 +289,7 @@ void OnDeinit(const int reason)
       int lower_open_promoted   = CountOpenBuySublineParts(true);
 
       ulong sub_entries_total = g_subline_upper_sells + g_subline_lower_buys;
+      ulong twoway_total      = g_subline_upper_twoway_sells + g_subline_lower_twoway_buys;
       ulong returned_total    = g_subline_upper_returned_parent + g_subline_lower_returned_parent;
       ulong reached_total     = g_subline_upper_reached_next + g_subline_lower_reached_next;
       int   unresolved_total  = upper_open_unresolved + lower_open_unresolved;
@@ -300,6 +303,9 @@ void OnDeinit(const int reason)
       Print("Sub-line entries       : upper sells ", (string)g_subline_upper_sells,
             " / lower buys ", (string)g_subline_lower_buys,
             " / total ", (string)sub_entries_total);
+      Print("Two-way entries        : upper sells ", (string)g_subline_upper_twoway_sells,
+            " / lower buys ", (string)g_subline_lower_twoway_buys,
+            " / total ", (string)twoway_total);
       Print("Touches without entry  : ",
             (string)(g_subline_total_touches - sub_entries_total));
       Print("Main remaining halves  : upper ", (string)g_mainline_upper_remaining,
